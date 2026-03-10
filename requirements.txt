@@ -9,3 +9,4 @@ pydub
 SpeechRecognition
 static-ffmpeg
 gunicorn
+yt-dlp

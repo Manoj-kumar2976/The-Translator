@@ -111,8 +111,3 @@ def process_subtitles():
         return jsonify({
             "error": str(e)
         }), 500
-
-
-# 🔹 Required for Vercel serverless
-def handler(request, response):
-    return app(request, response)

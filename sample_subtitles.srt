@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:03,500
+Hello, and welcome to this video about artificial intelligence.
+
+2
+00:00:04,200 --> 00:00:06,800
+Today we are going to learn how to translate subtitles.
+
+3
+00:00:07,500 --> 00:00:10,000
+It process happens automatically using python and deep learning models.
+
+4
+00:00:10,500 --> 00:00:14,000
+Thank you for watching this tutorial. Please enjoy the results.

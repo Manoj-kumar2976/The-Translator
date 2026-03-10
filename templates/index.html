@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Subtitle Voice Translator</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --primary: #58a6ff;
+            --primary-hover: #3182ce;
+            --secondary-bg: #161b22;
+            --border-color: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #8b949e;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: #1f2428;
+        }
+
+        .upload-area text {
+            color: #8b949e;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #30363d;
+            cursor: not-allowed;
+            color: #8b949e;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        select {
+            padding: 10px;
+            border-radius: 6px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            font-size: 16px;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: var(--primary);
+        }
+
+        #results-area {
+            display: none;
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .subtitle-item {
+            background-color: var(--bg-color);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .timecode {
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 5px;
+        }
+
+        .original-text {
+            font-size: 14px;
+            color: #8b949e;
+            margin-bottom: 5px;
+        }
+
+        .translated-text {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        audio {
+            width: 100%;
+            height: 35px;
+        }
+
+        .play-all-btn {
+            background-color: #238636;
+            margin-bottom: 20px;
+        }
+
+        .play-all-btn:hover {
+            background-color: #2ea043;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>AI Subtitle Voice Translator</h1>
+    <p class="subtitle">Paste a YouTube URL to automatically translate its speech into a new AI voice</p>
+
+    <div class="container">
+        <form id="translator-form">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="target-language">Target Language</label>
+                    <select id="target-language" name="target_language">
+                        <!-- Default Telugu as requested -->
+                        <option value="te" selected>Telugu</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ta">Tamil</option>
+                        <option value="ml">Malayalam</option>
+                        <option value="kn">Kannada</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group" style="margin-bottom: 20px;">
+                <label for="youtube-url">YouTube Video URL</label>
+                <input type="url" id="youtube-url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=..."
+                    required
+                    style="padding: 12px; border-radius: 6px; background-color: var(--secondary-bg); color: var(--text-color); border: 2px dashed var(--border-color); font-size: 16px; width: calc(100% - 24px);">
+            </div>
+
+
+            <button type="submit" id="submit-btn">Extract, Translate and Generate Voice</button>
+        </form>
+
+        <div class="loader" id="loader">
+            <p>Processing subtitles... This may take a few minutes depending on the file size.</p>
+            <i>Converting text to speech...</i>
+        </div>
+
+        <div id="video-container"
+            style="display: none; width: 100%; max-width: 800px; margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <h2>Video Preview</h2>
+            <video id="video-player" controls
+                style="width: 100%; border-radius: 8px; border: 1px solid var(--border-color);"></video>
+            <p style="font-size: 14px; color: #8b949e; margin-top: 10px;">The translated AI-voice audio will play
+                automatically alongside the video.</p>
+        </div>
+
+        <div id="results-area">
+            <h2>Translation Results</h2>
+            <button class="play-all-btn" id="play-all-btn">▶ Play Sequence</button>
+            <div id="subtitles-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const youtubeUrlInput = document.getElementById('youtube-url');
+        const submitBtn = document.getElementById('submit-btn');
+        const form = document.getElementById('translator-form');
+        const loader = document.getElementById('loader');
+        const resultsArea = document.getElementById('results-area');
+        const subtitlesList = document.getElementById('subtitles-list');
+        const playAllBtn = document.getElementById('play-all-btn');
+
+        const videoContainer = document.getElementById('video-container');
+        const videoPlayer = document.getElementById('video-player');
+
+        let targetSubtitles = [];
+        let activeAudioIndex = -1;
+        let isAudioWaitPausing = false;
+
+        // Enable button when URL is typed
+        youtubeUrlInput.addEventListener('input', function () {
+            submitBtn.disabled = this.value.trim() === '';
+        });
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const youtubeUrl = youtubeUrlInput.value.trim();
+            if (!youtubeUrl) return;
+
+            const targetLang = document.getElementById('target-language').value;
+
+            const formData = new FormData();
+            formData.append('youtube_url', youtubeUrl);
+            formData.append('target_language', targetLang);
+
+            // UI state
+            submitBtn.disabled = true;
+            loader.style.display = 'block';
+            resultsArea.style.display = 'none';
+            subtitlesList.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/process-subtitles', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    targetSubtitles = data.subtitles;
+                    renderSubtitles(targetSubtitles);
+                    resultsArea.style.display = 'block';
+
+                    if (data.video_file) {
+                        videoPlayer.src = '/static/' + data.video_file;
+                        videoPlayer.volume = 0.2;
+                        videoContainer.style.display = 'block';
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing the request.');
+            } finally {
+                submitBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+
+        function renderSubtitles(subtitles) {
+            subtitlesList.innerHTML = '';
+            subtitles.forEach((sub, idx) => {
+                const item = document.createElement('div');
+                item.className = 'subtitle-item';
+
+                // Format times for display
+                const startStr = new Date(sub.start * 1000).toISOString().substr(11, 8);
+                const endStr = new Date(sub.end * 1000).toISOString().substr(11, 8);
+
+                let audioHtml = '';
+                if (sub.audio_file) {
+                    audioHtml = `
+                        <audio controls id="audio-${idx}" data-index="${idx}">
+                            <source src="/static/${sub.audio_file}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    `;
+                }
+
+                item.innerHTML = `
+                    <div class="timecode">${startStr} --> ${endStr}</div>
+                    <div class="original-text">${sub.text.replace(/\\n/g, '<br>')}</div>
+                    <div class="translated-text">${sub.translated_text || ''}</div>
+                    ${audioHtml}
+                `;
+                subtitlesList.appendChild(item);
+            });
+        }
+
+        playAllBtn.addEventListener('click', () => {
+            if (videoPlayer && videoPlayer.src && videoPlayer.src !== window.location.href) {
+                // If we have a video loaded, playing the video perfectly syncs everything!
+                videoContainer.scrollIntoView({ behavior: 'smooth' });
+                videoPlayer.currentTime = 0;
+                videoPlayer.play().catch(e => console.error("Video play error:", e));
+            } else {
+                playSequence(0);
+            }
+        });
+
+        // --- Video Sync Logic ---
+        function stopActiveAudio() {
+            if (activeAudioIndex !== -1) {
+                const audioEl = document.getElementById(`audio-${activeAudioIndex}`);
+                if (audioEl && !audioEl.paused) {
+                    audioEl.pause();
+                }
+            }
+        }
+
+        videoPlayer.addEventListener('timeupdate', () => {
+            if (videoPlayer.paused) return; // Prevent interference if paused
+            const currentTime = videoPlayer.currentTime;
+
+            // Find the most recent subtitle that has started playing
+            let currentSubIndex = -1;
+            for (let i = 0; i < targetSubtitles.length; i++) {
+                if (currentTime >= targetSubtitles[i].start) {
+                    currentSubIndex = i;
+                } else {
+                    break;
+                }
+            }
+
+            if (currentSubIndex !== -1 && currentSubIndex !== activeAudioIndex) {
+                // We are moving to a new subtitle index. 
+                // First check if the OLD audio is still playing heavily overflowed translation
+                if (activeAudioIndex !== -1) {
+                    const oldAudio = document.getElementById(`audio-${activeAudioIndex}`);
+                    if (oldAudio && !oldAudio.paused && !oldAudio.ended) {
+                        // Pause the video smoothly and wait for the AI voice to finish speaking!
+                        isAudioWaitPausing = true;
+                        videoPlayer.pause();
+                        oldAudio.onended = () => {
+                            oldAudio.onended = null; // Clean up
+                            videoPlayer.play().catch(e => console.log(e));
+                        };
+                        return; // Do not process the new subtitle yet
+                    }
+                }
+
+                // If we get here, it's perfectly safe to switch to the new audio track
+                stopActiveAudio();
+                activeAudioIndex = currentSubIndex;
+                const audioEl = document.getElementById(`audio-${activeAudioIndex}`);
+                if (audioEl && !videoPlayer.paused) {
+                    let offset = currentTime - targetSubtitles[activeAudioIndex].start;
+                    if (offset < 0) offset = 0;
+                    if (isNaN(audioEl.duration) || offset < audioEl.duration) {
+                        // Only forcefully reposition if they differ significantly to avoid glitching
+                        if (Math.abs(audioEl.currentTime - offset) > 0.5) {
+                            audioEl.currentTime = offset;
+                        }
+                        audioEl.play().catch(e => console.log("Audio play error:", e));
+                    }
+                }
+            }
+        });
+
+        videoPlayer.addEventListener('play', () => {
+            isAudioWaitPausing = false;
+            // Calculate fresh index from video time upon playing
+            const currentTime = videoPlayer.currentTime;
+            let currentSubIndex = -1;
+            for (let i = 0; i < targetSubtitles.length; i++) {
+                if (currentTime >= targetSubtitles[i].start) {
+                    currentSubIndex = i;
+                } else {
+                    break;
+                }
+            }
+
+            if (currentSubIndex !== -1) {
+                activeAudioIndex = currentSubIndex;
+                const audioEl = document.getElementById(`audio-${activeAudioIndex}`);
+                // Only attempt to resume audio if it hasn't completely finished
+                if (audioEl && !audioEl.ended) {
+                    let offset = videoPlayer.currentTime - targetSubtitles[activeAudioIndex].start;
+                    if (offset < 0) offset = 0;
+                    if (isNaN(audioEl.duration) || offset < audioEl.duration) {
+                        if (Math.abs(audioEl.currentTime - offset) > 0.5) {
+                            audioEl.currentTime = offset;
+                        }
+                        audioEl.play().catch(e => console.log("Audio play error:", e));
+                    }
+                }
+            }
+        });
+
+        videoPlayer.addEventListener('pause', () => {
+            // Only explicitly pause audio if it was not auto-paused for overflow
+            if (!isAudioWaitPausing) {
+                stopActiveAudio();
+            }
+        });
+
+        videoPlayer.addEventListener('seeking', () => {
+            stopActiveAudio();
+            activeAudioIndex = -1; // Force a hard recalculation on the next tick
+        });
+
+        // --- Sequence playback (Audio only fallback) ---
+        function playSequence(index) {
+            if (index >= targetSubtitles.length) return; // End of list
+
+            const audioEl = document.getElementById(`audio-${index}`);
+            if (audioEl) {
+                // Autoplay block handler
+                audioEl.play().catch(e => {
+                    console.error("Audio block play error for index", index, e);
+                    // Skip to next if failed immediately
+                    setTimeout(() => playSequence(index + 1), 500);
+                });
+
+                // Wait for it to finish before playing the next
+                audioEl.onended = () => {
+                    const currentSub = targetSubtitles[index];
+                    const nextSub = targetSubtitles[index + 1];
+
+                    if (nextSub) {
+                        // Calculate gap between current end and next start
+                        const gap = Math.max(0, nextSub.start - currentSub.end);
+                        setTimeout(() => {
+                            playSequence(index + 1);
+                        }, gap * 1000);
+                    }
+                };
+            } else {
+                // If no audio for this sub, just skip to next after a delay
+                setTimeout(() => playSequence(index + 1), 1000);
+            }
+        }
+
+    </script>
+</body>
+
+</html>

@@ -2,6 +2,8 @@ import os
 import shutil
 from flask import Flask, render_template, request, jsonify
 
+import static_ffmpeg
+static_ffmpeg.add_paths()
 
 from subtitle_reader import read_subtitles
 from translator import translate_subtitles
